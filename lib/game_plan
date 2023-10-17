@@ -1,0 +1,58 @@
+import 'package:flutter/material.dart';
+
+class GamePlanPage extends StatelessWidget {
+  final int gameType;
+  final int gameDuration;
+  final List<PlayerData> players; // Assuming you have a PlayerData class
+
+  GamePlanPage(this.gameType, this.gameDuration, this.players);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Game Plan'),
+      ),
+      body: ListView(
+        children: _buildSegments(),
+      ),
+    );
+  }
+
+  List<Widget> _buildSegments() {
+    // Calculate the number of segments based on game duration
+    int numSegments = (gameDuration / 5).ceil();
+
+    List<Widget> segmentWidgets = [];
+
+    for (int segmentNumber = 1; segmentNumber <= numSegments; segmentNumber++) {
+      // Calculate which players should be on/off the pitch for this segment
+      List<PlayerData> playersOnPitch = _calculatePlayersForSegment(segmentNumber);
+
+      // Create a widget to display this segment
+      segmentWidgets.add(
+        Card(
+          child: Column(
+            children: [
+              Text('Segment $segmentNumber'),
+              Text('Players on the pitch: ${playersOnPitch.map((player) => player.name).join(', ')}'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return segmentWidgets;
+  }
+
+  List<PlayerData> _calculatePlayersForSegment(int segmentNumber) {
+    // Implement your logic to determine which players should be on/off the pitch
+    // Distribute players fairly based on their preferences and game type
+    // For example, you could iterate through players and choose those who are happy in goal for this segment.
+    // You should also keep track of how much time each player has spent on the field or in goal.
+    // This logic can be complex and may require custom algorithms to distribute players fairly.
+
+    // Return the list of players for this segment
+    return players; // Placeholder, replace with your logic
+  }
+}
