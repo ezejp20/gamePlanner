@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'game_plan.dart';
+
 class PlayerData {
   String? name;
   String role;
   bool isWillingToGoInGoal;
-  PlayerData({this.name = '', this.isWillingToGoInGoal=false, this.role = ''});
+  List<String> positions = []; // Initialize as an empty list
+  PlayerData({this.name = '', this.isWillingToGoInGoal = false, this.role = ''});
 }
 
 class PlayerNamesPage extends StatefulWidget {
@@ -29,7 +31,6 @@ class _PlayerNamesPageState extends State<PlayerNamesPage> {
     }
   }
 
-  // Define _navigateToGamePlanPage within _PlayerNamesPageState
   void _navigateToGamePlanPage() {
     Navigator.push(
       context,
@@ -64,39 +65,93 @@ class _PlayerNamesPageState extends State<PlayerNamesPage> {
             child: ListView.builder(
               itemCount: players.length,
               itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: TextField(
-                          onChanged: (value) {
-                            players[index].name = value;
-                          },
-                          decoration: InputDecoration(
-                            hintText: 'Player ${index + 1}',
-                          ),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        'Player ${index + 1}',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: TextField(
+                        onChanged: (value) {
+                          players[index].name = value;
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Enter Name',
                         ),
                       ),
-                      Expanded(
-                        flex: 1,
-                        child: Checkbox(
-                          value: players[index].isWillingToGoInGoal,
+                    ),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: players[index].positions.contains('Goal'),
                           onChanged: (value) {
                             setState(() {
-                              players[index].isWillingToGoInGoal = value!;
+                              if (value!) {
+                                players[index].positions.add('Goal');
+                                players[index].isWillingToGoInGoal = true; // Set to true when "Goal" is selected
+                              } else {
+                                players[index].positions.remove('Goal');
+                                if (players[index].positions.isEmpty) {
+                                  players[index].isWillingToGoInGoal = false; // Set to false if no positions are selected
+                                }
+                              }
                             });
                           },
                         ),
-                      ),
-                    ],
-                  ),
+                        Text('Goal'),
+                        Checkbox(
+                          value: players[index].positions.contains('Defence'),
+                          onChanged: (value) {
+                            setState(() {
+                              if (value!) {
+                                players[index].positions.add('Defence');
+                              } else {
+                                players[index].positions.remove('Defence');
+                              }
+                            });
+                          },
+                        ),
+                        Text('Defence'),
+                        Checkbox(
+                          value: players[index].positions.contains('Mid'),
+                          onChanged: (value) {
+                            setState(() {
+                              if (value!) {
+                                players[index].positions.add('Mid');
+                              } else {
+                                players[index].positions.remove('Mid');
+                              }
+                            });
+                          },
+                        ),
+                        Text('Mid'),
+                        Checkbox(
+                          value: players[index].positions.contains('Forward'),
+                          onChanged: (value) {
+                            setState(() {
+                              if (value!) {
+                                players[index].positions.add('Forward');
+                              } else {
+                                players[index].positions.remove('Forward');
+                              }
+                            });
+                          },
+                        ),
+                        Text('Forward'),
+                      ],
+                    ),
+                    // Repeat the above code for Defence, Midfield, and Forward positions
+                  ],
                 );
               },
             ),
           ),
-          // Add a "Next" button
           ElevatedButton(
             onPressed: _navigateToGamePlanPage,
             child: Text('Next'),
