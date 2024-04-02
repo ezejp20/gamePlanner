@@ -6,15 +6,18 @@ class PlayerData {
   String role;
   bool isWillingToGoInGoal;
   List<String> positions = []; // Initialize as an empty list
-  PlayerData({this.name = '', this.isWillingToGoInGoal = false, this.role = ''});
+  PlayerData(
+      {this.name = '', this.isWillingToGoInGoal = false, this.role = ''});
 }
 
 class PlayerNamesPage extends StatefulWidget {
   final int gameType;
   final int gameDuration;
   final int playerCount;
+  final int segmentLength;
 
-  PlayerNamesPage(this.gameType, this.gameDuration, this.playerCount);
+  PlayerNamesPage(
+      this.gameType, this.gameDuration, this.playerCount, this.segmentLength);
 
   @override
   _PlayerNamesPageState createState() => _PlayerNamesPageState();
@@ -39,6 +42,7 @@ class _PlayerNamesPageState extends State<PlayerNamesPage> {
           widget.gameType,
           widget.gameDuration,
           players,
+          widget.segmentLength,
         ),
       ),
     );
@@ -53,14 +57,6 @@ class _PlayerNamesPageState extends State<PlayerNamesPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              'Happy to go in goal?',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.right,
-            ),
-          ),
           Expanded(
             child: ListView.builder(
               itemCount: players.length,
@@ -94,11 +90,13 @@ class _PlayerNamesPageState extends State<PlayerNamesPage> {
                             setState(() {
                               if (value!) {
                                 players[index].positions.add('Goal');
-                                players[index].isWillingToGoInGoal = true; // Set to true when "Goal" is selected
+                                players[index].isWillingToGoInGoal =
+                                    true; // Set to true when "Goal" is selected
                               } else {
                                 players[index].positions.remove('Goal');
                                 if (players[index].positions.isEmpty) {
-                                  players[index].isWillingToGoInGoal = false; // Set to false if no positions are selected
+                                  players[index].isWillingToGoInGoal =
+                                      false; // Set to false if no positions are selected
                                 }
                               }
                             });

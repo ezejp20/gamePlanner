@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'player_names_page.dart';
+import 'player_names_page.dart'; // Ensure this import matches the path to your PlayerNamesPage
 
 class PlayerCountPage extends StatefulWidget {
   final int gameType;
   final int gameDuration;
+  final int segmentLength; // New parameter for segment length
 
-  PlayerCountPage(this.gameType, this.gameDuration);
+  PlayerCountPage(this.gameType, this.gameDuration, this.segmentLength);
 
   @override
   _PlayerCountPageState createState() => _PlayerCountPageState();
@@ -26,16 +27,15 @@ class _PlayerCountPageState extends State<PlayerCountPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              'You have chosen ${widget.gameType}-a-side game.',
+              'You have chosen ${widget.gameType}-a-side game for ${widget.gameDuration} minutes.',
               style: TextStyle(fontSize: 16),
             ),
             Text(
-              'Game duration: ${widget.gameDuration} minutes.',
+              'Segment length: ${widget.segmentLength} minutes.',
               style: TextStyle(fontSize: 16),
             ),
             SizedBox(height: 20),
             Text('Enter the number of players:'),
-            SizedBox(height: 10),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 50),
               child: TextField(
@@ -51,27 +51,29 @@ class _PlayerCountPageState extends State<PlayerCountPage> {
               ),
             ),
             SizedBox(height: 20),
-            if (errorMessage != null)
+            if (errorMessage.isNotEmpty)
               Text(
                 errorMessage,
                 style: TextStyle(color: Colors.red),
               ),
             ElevatedButton(
               onPressed: () {
-                if (playerCount != null) {
-                  if (playerCount! < widget.gameType) {
-                    setState(() {
-                      errorMessage = "You don't have enough players!";
-                    });
-                  } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PlayerNamesPage(
-                            widget.gameType, widget.gameDuration, playerCount!),
-                      ),
-                    );
-                  }
+                if (playerCount != null && playerCount! >= widget.gameType) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PlayerNamesPage(
+                          widget.gameType,
+                          widget.gameDuration,
+                          playerCount!,
+                          widget
+                              .segmentLength), // Pass segmentLength to the next page
+                    ),
+                  );
+                } else {
+                  setState(() {
+                    errorMessage = "Please enter a valid number of players.";
+                  });
                 }
               },
               child: Text('Next'),
