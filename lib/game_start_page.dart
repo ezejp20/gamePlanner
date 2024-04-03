@@ -6,7 +6,7 @@ import 'player_names_page.dart';
 
 class GameStartPage extends StatefulWidget {
   final int gameDuration;
-  final int segmentLength;
+  final int segmentLength; // Segment length in minutes
   final List<String> substitutions; // Substitution messages for each segment
 
   GameStartPage({
@@ -23,32 +23,36 @@ class GameStartPage extends StatefulWidget {
 class _GameStartPageState extends State<GameStartPage> {
   Timer? _timer;
   int _currentSegment = 0;
-  int _elapsedSeconds = 0;
+  int _segmentEndTime =
+      0; // The time (in seconds) when the current segment ends
 
   @override
   void initState() {
     super.initState();
+    _segmentEndTime = widget.segmentLength * 60; // Initialize segment end time
     _startTimer();
   }
 
   void _startTimer() {
-    const oneSec = Duration(seconds: 1);
-    _timer = Timer.periodic(oneSec, (timer) {
-      setState(() {
-        _elapsedSeconds++;
-        // Check if it's time to move to the next segment
-        if (_elapsedSeconds % (widget.segmentLength * 60) == 0) {
-          // Move to the next segment
-          _currentSegment++;
-          // If all segments have been completed, cancel the timer
-          if (_currentSegment >= widget.substitutions.length) {
-            _timer?.cancel();
-            _showGameEndAlert();
-          } else {
-            _showSubstitutionAlert();
-          }
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (_segmentEndTime == 0) {
+        // Segment has ended
+        _showSubstitutionAlert();
+        _currentSegment++;
+        if (_currentSegment >= widget.substitutions.length) {
+          // All segments completed
+          _timer?.cancel();
+          _showGameEndAlert();
+        } else {
+          // Start next segment
+          _segmentEndTime = widget.segmentLength * 60;
         }
-      });
+      } else {
+        // Countdown
+        setState(() {
+          _segmentEndTime--;
+        });
+      }
     });
   }
 
@@ -64,7 +68,7 @@ class _GameStartPageState extends State<GameStartPage> {
               TextButton(
                 child: Text('OK'),
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(); // Close the dialog
                 },
               ),
             ],
@@ -84,7 +88,7 @@ class _GameStartPageState extends State<GameStartPage> {
           actions: <Widget>[
             TextButton(
               child: Text('OK'),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(context).pop(), // Close the dialog
             ),
           ],
         );
@@ -100,13 +104,26 @@ class _GameStartPageState extends State<GameStartPage> {
 
   @override
   Widget build(BuildContext context) {
+    int minutesLeft = _segmentEndTime ~/ 60;
+    int secondsLeft = _segmentEndTime % 60;
     return Scaffold(
       appBar: AppBar(
         title: Text('Game In Progress'),
       ),
       body: Center(
-        child: Text(
-            'Segment ${_currentSegment + 1} of ${widget.substitutions.length}'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Segment ${_currentSegment + 1} of ${widget.substitutions.length}',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            Text(
+              'Time left: ${minutesLeft.toString().padLeft(2, '0')}:${secondsLeft.toString().padLeft(2, '0')}',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ],
+        ),
       ),
     );
   }
