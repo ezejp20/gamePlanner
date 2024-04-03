@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'player_names_page.dart';
+import 'player_names_page.dart'; // Make sure this import is correct based on your project structure
+import 'game_start_page.dart';
 
 class GamePlanPage extends StatelessWidget {
   final int gameType;
@@ -10,119 +11,90 @@ class GamePlanPage extends StatelessWidget {
   GamePlanPage(
       this.gameType, this.gameDuration, this.players, this.segmentLength);
 
-  int get numSegments => (gameDuration / segmentLength)
-      .ceil(); // Updated to calculate number of segments correctly
+  int get numSegments => (gameDuration / segmentLength).ceil();
 
-  List<PlayerData> onPitchPlayers = [];
-  List<PlayerData> inGoalPlayers = [];
-  List<PlayerData> offPitchPlayers = [];
+  List<String> generateSubstitutionMessages() {
+    List<String> substitutions = [];
+    List<List<PlayerData>> allSegmentsPlayers =
+        List.generate(numSegments, (_) => []);
+    // Generate players for each segment
+    for (int i = 0; i < numSegments; i++) {
+      allSegmentsPlayers[i] = calculatePlayersForSegment(i);
+    }
+    // Create substitution messages
+    for (int i = 1; i < allSegmentsPlayers.length; i++) {
+      List<PlayerData> prevSegment = allSegmentsPlayers[i - 1];
+      List<PlayerData> currentSegment = allSegmentsPlayers[i];
+      List<PlayerData> comingOn =
+          currentSegment.where((p) => !prevSegment.contains(p)).toList();
+      List<PlayerData> goingOff =
+          prevSegment.where((p) => !currentSegment.contains(p)).toList();
+
+      String message = "Segment ${i}: ";
+      if (goingOff.isNotEmpty) {
+        String goingOffNames = goingOff.map((p) => p.name).join(", ");
+        message += "$goingOffNames off; ";
+      }
+      if (comingOn.isNotEmpty) {
+        String comingOnNames = comingOn
+            .map((p) => "${p.name} (${p.positions.join('/')})")
+            .join(", ");
+        message += "$comingOnNames on";
+      }
+      substitutions.add(message);
+    }
+    return substitutions;
+  }
 
   List<PlayerData> calculatePlayersForSegment(int segmentNumber) {
-    onPitchPlayers.clear();
-    inGoalPlayers.clear();
-    offPitchPlayers.clear();
+    List<PlayerData> onPitchPlayers = [];
+    List<PlayerData> inGoalPlayers = [];
+    List<PlayerData> offPitchPlayers = [];
 
-    // Filter players who are willing to go in goal
     List<PlayerData> willingGoalies =
         players.where((player) => player.isWillingToGoInGoal).toList();
-
-    // Rotate goalies who are willing to go in goal
     int goaliesIndex = segmentNumber % willingGoalies.length;
     inGoalPlayers = [willingGoalies[goaliesIndex]];
 
-    // Create a list of outfield players, including those willing to go in goal
     List<PlayerData> outfieldPlayers =
         players.where((player) => !inGoalPlayers.contains(player)).toList();
-
-    // Calculate the range of outfield players for this segment
     int playersOnPitch = gameType - 1;
     int outfieldStartIndex = segmentNumber % outfieldPlayers.length;
-    List<PlayerData> outfieldPlayersForSegment = [];
-
     for (int i = 0; i < playersOnPitch; i++) {
       int index = (outfieldStartIndex + i) % outfieldPlayers.length;
-      outfieldPlayersForSegment.add(outfieldPlayers[index]);
+      onPitchPlayers.add(outfieldPlayers[index]);
     }
 
-    // Calculate the list of players substituted off
     offPitchPlayers = players
         .where((player) =>
-            !inGoalPlayers.contains(player) &&
-            !outfieldPlayersForSegment.contains(player))
+            !onPitchPlayers.contains(player) && !inGoalPlayers.contains(player))
         .toList();
 
-    // Assign the role for each player
-    outfieldPlayersForSegment.forEach((player) {
-      player.role = 'onPitch';
-    });
-    inGoalPlayers.forEach((player) {
-      player.role = 'inGoal';
-    });
-    offPitchPlayers.forEach((player) {
-      player.role = 'offPitch';
-    });
+    // Assign roles (this part can be adjusted based on your actual logic)
+    onPitchPlayers.forEach((player) => player.role = 'onPitch');
+    inGoalPlayers.forEach((player) => player.role = 'inGoal');
+    offPitchPlayers.forEach((player) => player.role = 'offPitch');
 
-    // Combine the lists for this segment
-    List<PlayerData> segmentPlayers = [];
-    segmentPlayers.addAll(outfieldPlayersForSegment);
-    segmentPlayers.addAll(inGoalPlayers);
-    segmentPlayers.addAll(offPitchPlayers);
-
-    return segmentPlayers;
-  }
-
-  String getPlayersByRole(List<PlayerData> players, String role) {
-    List<PlayerData> filteredPlayers =
-        players.where((player) => player.role == role).toList();
-
-    if (role == 'onPitch') {
-      // Check if there are players without the necessary positions
-      final missingPositions = ['Defence', 'Mid', 'Forward']
-          .where((position) => filteredPlayers
-              .every((player) => !player.positions.contains(position)))
-          .toList();
-
-      String positionMessage = '';
-      if (missingPositions.isNotEmpty) {
-        // Someone will have to play out of position to cover missing positions
-        positionMessage =
-            'Someone will have to play out of position to cover ${missingPositions.join('/')}.';
-      }
-
-      return filteredPlayers.map((player) {
-        // Display positions for "Players on the Pitch" without "Goal"
-        final positions =
-            player.positions.where((position) => position != 'Goal');
-        return '${player.name} (${positions.join('/')})';
-      }).followedBy([positionMessage]).join(', '); // Add the message
-    } else {
-      // Do not display positions for "Player in Goal" or "Players Off the Pitch"
-      return filteredPlayers.map((player) => player.name).join(', ');
-    }
+    return [...onPitchPlayers, ...inGoalPlayers, ...offPitchPlayers];
   }
 
   @override
   Widget build(BuildContext context) {
-    // Use numSegments here to determine the itemCount for ListView.builder
+    List<String> substitutions = generateSubstitutionMessages();
     return Scaffold(
       appBar: AppBar(
         title: Text('Game Plan'),
       ),
       body: ListView.builder(
-        itemCount:
-            numSegments, // Updated to use the calculated number of segments
+        itemCount: numSegments,
         itemBuilder: (context, index) {
           final int startTime = index * segmentLength;
           int endTime = startTime + segmentLength;
           if (index == numSegments - 1 && gameDuration % segmentLength != 0) {
-            // Check for the last segment
-            endTime =
-                gameDuration; // Adjust the end time for the last segment if needed
+            endTime = gameDuration;
           }
-
           final List<PlayerData> segmentPlayers =
               calculatePlayersForSegment(index);
-
           return Card(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,6 +120,45 @@ class GamePlanPage extends StatelessWidget {
           );
         },
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => GameStartPage(
+                gameDuration: gameDuration,
+                segmentLength: segmentLength,
+                substitutions: substitutions,
+              ),
+            ),
+          );
+        },
+        child: Icon(Icons.play_arrow),
+        backgroundColor: Colors.green,
+      ),
     );
+  }
+
+  String getPlayersByRole(List<PlayerData> players, String role) {
+    List<PlayerData> filteredPlayers =
+        players.where((player) => player.role == role).toList();
+    String positionMessage = '';
+    if (role == 'onPitch') {
+      final missingPositions = ['Defence', 'Mid', 'Forward']
+          .where((position) => filteredPlayers
+              .every((player) => !player.positions.contains(position)))
+          .toList();
+      if (missingPositions.isNotEmpty) {
+        positionMessage =
+            'Someone will have to play out of position to cover ${missingPositions.join('/')}.';
+      }
+      return filteredPlayers
+              .map((player) =>
+                  '${player.name} (${player.positions.where((position) => position != 'Goal').join('/')})')
+              .join(', ') +
+          (positionMessage.isNotEmpty ? " $positionMessage" : "");
+    } else {
+      return filteredPlayers.map((player) => player.name).join(', ');
+    }
   }
 }
